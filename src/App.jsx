@@ -10,7 +10,7 @@ import {
   Settings, 
   LogOut, 
   ChevronRight,
-  History,
+  History, 
   ArrowUpRight,
   AlertCircle,
   Search,
@@ -53,12 +53,11 @@ const CATEGORIES = {
 // --- Authentication Component ---
 
 const AuthPage = ({ onLogin }) => {
-  const [mode, setMode] = useState('login'); // 'login', 'signup', 'forgot'
+  const [mode, setMode] = useState('login'); 
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Helper to simulate persistent users in localStorage
   const getUsers = () => {
     try {
       return JSON.parse(localStorage.getItem('vf_users') || '[]');
@@ -85,6 +84,7 @@ const AuthPage = ({ onLogin }) => {
       saveUsers([...users, newUser]);
       setSuccess('Account created! You can now sign in.');
       setMode('login');
+      setFormData(prev => ({ ...prev, password: '' }));
     } 
     else if (mode === 'login') {
       const user = users.find(u => u.email === formData.email && u.password === formData.password);
@@ -97,9 +97,9 @@ const AuthPage = ({ onLogin }) => {
     else if (mode === 'forgot') {
       const user = users.find(u => u.email === formData.email);
       if (user) {
-        setSuccess('Password recovery instructions sent to your email.');
+        setSuccess('If this email is registered, recovery instructions have been sent.');
       } else {
-        setError('Email address not found.');
+        setError('Email address not found in our records.');
       }
     }
   };
@@ -219,7 +219,6 @@ export default function App() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [assets, setAssets] = useState([]);
 
-  // Search/Filter states
   const [searchRange, setSearchRange] = useState({
     start: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
@@ -228,7 +227,6 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newAsset, setNewAsset] = useState({ category: 'Cash (BDT)', value: '', date: new Date().toISOString().split('T')[0] });
 
-  // Load user data on login
   useEffect(() => {
     if (user) {
       try {
@@ -240,14 +238,12 @@ export default function App() {
     }
   }, [user]);
 
-  // Persist user data on change
   useEffect(() => {
     if (user) {
       localStorage.setItem(`vf_assets_${user.email}`, JSON.stringify(assets));
     }
   }, [assets, user]);
 
-  // Global hooks for data
   const historyData = useMemo(() => {
     const sorted = [...assets].sort((a, b) => new Date(a.date) - new Date(b.date));
     let runningTotal = 0;
@@ -268,8 +264,6 @@ export default function App() {
   }, [assets]);
 
   if (!user) return <AuthPage onLogin={setUser} />;
-
-  // --- Functions ---
 
   const handleAddAsset = (e) => {
     e.preventDefault();
@@ -310,8 +304,6 @@ export default function App() {
     return data;
   };
 
-  // --- UI Nav Item ---
-
   const NavItem = ({ id, label, icon: Icon, isCategory = false }) => (
     <button 
       onClick={() => { 
@@ -334,8 +326,6 @@ export default function App() {
       {isCategory && <ChevronRight size={14} className="opacity-30" />}
     </button>
   );
-
-  // --- Tab Renders ---
 
   const renderDashboard = () => (
     <div className="space-y-6">
@@ -362,11 +352,12 @@ export default function App() {
           </div>
         </div>
         <div className="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 hidden md:block">
-          <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Growth Trend</p>
-          <div className="h-16 mt-2 flex items-end gap-1">
-            {[4,7,5,9,12,8,15].map((v, i) => (
-              <div key={i} className="flex-1 bg-indigo-50 rounded-t-md hover:bg-indigo-600 transition-colors" style={{ height: `${v*6}%` }}></div>
-            ))}
+          <p className="text-slate-400 text-xs font-black uppercase tracking-widest">Health</p>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+               <TrendingUp size={20} />
+            </div>
+            <span className="text-sm font-bold text-slate-600">Active Growth</span>
           </div>
         </div>
       </div>
@@ -460,7 +451,7 @@ export default function App() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {assets.length === 0 ? (
-                <tr><td colSpan="4" className="px-8 py-20 text-center text-slate-400 font-bold italic">Your vault is currently empty. Record your first asset source above.</td></tr>
+                <tr><td colSpan="4" className="px-8 py-20 text-center text-slate-400 font-bold italic">No vault entries found.</td></tr>
               ) : (
                 [...assets].reverse().map((asset) => {
                   const CategoryIcon = CATEGORIES[asset.category]?.icon || PlusCircle;
@@ -603,7 +594,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans selection:bg-indigo-100 selection:text-indigo-700">
-      {/* Mobile Sidebar Toggle */}
       <button 
         onClick={() => setSidebarOpen(true)}
         className="lg:hidden fixed top-6 right-6 z-40 p-3 bg-white rounded-2xl shadow-xl border border-slate-100 text-slate-900"
@@ -611,12 +601,10 @@ export default function App() {
         <Menu size={24} />
       </button>
 
-      {/* Sidebar Backdrop */}
       {isSidebarOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[45] lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar Navigation */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col z-50 transform transition-all duration-500 ease-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -663,7 +651,6 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-6 lg:p-12 pt-24 lg:pt-12 w-full overflow-x-hidden">
         <header className="mb-12 flex justify-between items-start">
           <div>
@@ -681,7 +668,6 @@ export default function App() {
          activeTab === 'search' ? renderSearchPage() : renderCategoryPage()}
       </main>
 
-      {/* Transaction Entry Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-[100] p-6">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-slideUp">
@@ -731,7 +717,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Inline Animation Styles */}
       <style>{`
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slideUp { animation: slideUp 0.5s ease-out; }
