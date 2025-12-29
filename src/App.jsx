@@ -39,15 +39,15 @@ import {
 // --- Configuration & Constants ---
 
 const CATEGORIES = {
-  'Cash (BDT)': { color: '#10b981', icon: <Banknote size={20} /> },
-  'Cash (USD)': { color: '#059669', icon: <Banknote size={20} /> },
-  'BD Stock': { color: '#3b82f6', icon: <TrendingUp size={20} /> },
-  'NSave': { color: '#ef4444', icon: <History size={20} /> },
-  'EPay': { color: '#6366f1', icon: <Wallet size={20} /> },
-  'Banks': { color: '#8b5cf6', icon: <Banknote size={20} /> },
-  'Gold': { color: '#f59e0b', icon: <Coins size={20} /> },
-  'iFastGB': { color: '#06b6d4', icon: <TrendingUp size={20} /> },
-  'Other': { color: '#18181b', icon: <PlusCircle size={20} /> },
+  'Cash (BDT)': { color: '#10b981', icon: Banknote },
+  'Cash (USD)': { color: '#059669', icon: Banknote },
+  'BD Stock': { color: '#3b82f6', icon: TrendingUp },
+  'NSave': { color: '#ef4444', icon: History },
+  'EPay': { color: '#6366f1', icon: Wallet },
+  'Banks': { color: '#8b5cf6', icon: Banknote },
+  'Gold': { color: '#f59e0b', icon: Coins },
+  'iFastGB': { color: '#06b6d4', icon: TrendingUp },
+  'Other': { color: '#18181b', icon: PlusCircle },
 };
 
 // --- Authentication Component ---
@@ -59,7 +59,14 @@ const AuthPage = ({ onLogin }) => {
   const [success, setSuccess] = useState('');
 
   // Helper to simulate persistent users in localStorage
-  const getUsers = () => JSON.parse(localStorage.getItem('vf_users') || '[]');
+  const getUsers = () => {
+    try {
+      return JSON.parse(localStorage.getItem('vf_users') || '[]');
+    } catch (e) {
+      return [];
+    }
+  };
+  
   const saveUsers = (users) => localStorage.setItem('vf_users', JSON.stringify(users));
 
   const handleSubmit = (e) => {
@@ -112,7 +119,7 @@ const AuthPage = ({ onLogin }) => {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl text-sm font-bold flex items-center gap-3 animate-shake">
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl text-sm font-bold flex items-center gap-3">
             <AlertCircle size={18} />
             {error}
           </div>
@@ -197,9 +204,6 @@ const AuthPage = ({ onLogin }) => {
               {mode === 'login' ? 'Sign Up Free' : 'Sign In'}
             </button>
           </p>
-          {mode === 'forgot' && (
-            <button onClick={() => setMode('login')} className="mt-4 text-slate-400 text-sm font-bold hover:text-slate-600">Return to Sign In</button>
-          )}
         </div>
       </div>
     </div>
@@ -213,9 +217,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  
-  // Scoped assets: In production, these would come from a real database.
-  // For free hosting, we'll store them in localStorage keyed by the user's email.
   const [assets, setAssets] = useState([]);
 
   // Search/Filter states
@@ -230,8 +231,12 @@ export default function App() {
   // Load user data on login
   useEffect(() => {
     if (user) {
-      const saved = localStorage.getItem(`vf_assets_${user.email}`);
-      setAssets(saved ? JSON.parse(saved) : []);
+      try {
+        const saved = localStorage.getItem(`vf_assets_${user.email}`);
+        setAssets(saved ? JSON.parse(saved) : []);
+      } catch (e) {
+        setAssets([]);
+      }
     }
   }, [user]);
 
@@ -333,7 +338,7 @@ export default function App() {
   // --- Tab Renders ---
 
   const renderDashboard = () => (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between">
           <div>
@@ -457,25 +462,28 @@ export default function App() {
               {assets.length === 0 ? (
                 <tr><td colSpan="4" className="px-8 py-20 text-center text-slate-400 font-bold italic">Your vault is currently empty. Record your first asset source above.</td></tr>
               ) : (
-                [...assets].reverse().map((asset) => (
-                  <tr key={asset.id} className="hover:bg-slate-50/30 group transition-colors">
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2.5 rounded-xl shadow-sm" style={{ backgroundColor: CATEGORIES[asset.category]?.color + '15', color: CATEGORIES[asset.category]?.color }}>
-                          {CATEGORIES[asset.category]?.icon}
+                [...assets].reverse().map((asset) => {
+                  const CategoryIcon = CATEGORIES[asset.category]?.icon || PlusCircle;
+                  return (
+                    <tr key={asset.id} className="hover:bg-slate-50/30 group transition-colors">
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="p-2.5 rounded-xl shadow-sm" style={{ backgroundColor: CATEGORIES[asset.category]?.color + '15', color: CATEGORIES[asset.category]?.color }}>
+                            <CategoryIcon size={20} />
+                          </div>
+                          <span className="font-black text-slate-700">{asset.category}</span>
                         </div>
-                        <span className="font-black text-slate-700">{asset.category}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 font-mono font-black text-slate-900">৳ {asset.value?.toLocaleString()}</td>
-                    <td className="px-8 py-5 text-slate-400 font-medium hidden sm:table-cell">{asset.date}</td>
-                    <td className="px-8 py-5 text-right">
-                      <button onClick={() => deleteAsset(asset.id)} className="p-2 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-8 py-5 font-mono font-black text-slate-900">৳ {asset.value?.toLocaleString()}</td>
+                      <td className="px-8 py-5 text-slate-400 font-medium hidden sm:table-cell">{asset.date}</td>
+                      <td className="px-8 py-5 text-right">
+                        <button onClick={() => deleteAsset(asset.id)} className="p-2 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -491,7 +499,7 @@ export default function App() {
     const growth = rangeTotal - startTotal;
 
     return (
-      <div className="space-y-6 animate-fadeIn">
+      <div className="space-y-6">
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-3">
             <Search size={22} className="text-indigo-600" /> Date Range Analysis
@@ -520,7 +528,7 @@ export default function App() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-            <h3 className="text-lg font-black text-slate-900 mb-8 tracking-tight">Restricted Window progression</h3>
+            <h3 className="text-lg font-black text-slate-900 mb-8 tracking-tight">Timeline progression</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data}>
@@ -559,19 +567,21 @@ export default function App() {
       cumulative += a.value;
       return { date: a.date, total: cumulative, amount: a.value };
     });
+    
+    const CategoryIcon = CATEGORIES[selectedCategory]?.icon || PlusCircle;
 
     return (
-      <div className="space-y-6 animate-fadeIn">
+      <div className="space-y-6">
         <button onClick={() => setActiveTab('dashboard')} className="flex items-center text-slate-400 hover:text-indigo-600 font-black transition-all group">
           <ChevronRight size={22} className="rotate-180 mr-1 group-hover:-translate-x-1 transition-transform" /> Back to Workspace
         </button>
         <div className="flex items-center gap-5">
           <div className="p-5 rounded-3xl shadow-xl transform -rotate-3" style={{ backgroundColor: CATEGORIES[selectedCategory]?.color, color: '#fff' }}>
-            {CATEGORIES[selectedCategory]?.icon}
+            <CategoryIcon size={26} />
           </div>
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">{selectedCategory}</h1>
-            <p className="text-slate-500 font-bold">Category deep-dive and history</p>
+            <p className="text-slate-500 font-bold">Category details and growth history</p>
           </div>
         </div>
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
@@ -624,12 +634,12 @@ export default function App() {
         <nav className="flex-1 px-5 py-4 space-y-2 overflow-y-auto scrollbar-hide">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-4">Workspace</p>
           <NavItem id="dashboard" label="Dashboard" icon={LayoutDashboard} />
-          <NavItem id="search" label="Search Query" icon={Search} />
+          <NavItem id="search" label="Search Range" icon={Search} />
           
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mt-10 mb-4">Asset Vault</p>
           <div className="space-y-1">
             {Object.keys(CATEGORIES).map(cat => (
-              <NavItem key={cat} id={cat} label={cat} icon={() => CATEGORIES[cat].icon} isCategory={true} />
+              <NavItem key={cat} id={cat} label={cat} icon={CATEGORIES[cat].icon} isCategory={true} />
             ))}
           </div>
         </nav>
@@ -643,12 +653,12 @@ export default function App() {
               <p className="text-sm font-black text-slate-900 truncate uppercase tracking-tight">{user?.name}</p>
               <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                <p className="text-[9px] text-slate-400 font-black uppercase">Live Access</p>
+                <p className="text-[9px] text-slate-400 font-black uppercase">Active</p>
               </div>
             </div>
           </div>
           <button onClick={() => setUser(null)} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-black text-rose-500 hover:bg-rose-50 transition-colors uppercase tracking-widest">
-            <LogOut size={16} /> Secure Exit
+            <LogOut size={16} /> Sign Out
           </button>
         </div>
       </aside>
@@ -660,8 +670,8 @@ export default function App() {
             <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter leading-none">
               {activeTab === 'dashboard' ? 'Insight' : activeTab === 'search' ? 'Timeline' : selectedCategory}
             </h2>
-            <p className="text-slate-400 font-bold text-sm lg:text-base mt-2">
-              Financial vault of <span className="text-indigo-600">{user?.name}</span>
+            <p className="text-slate-400 font-bold text-sm lg:text-base mt-2 uppercase tracking-wide">
+              Vault: <span className="text-indigo-600 font-black">{user?.name}</span>
             </p>
           </div>
           <button className="hidden sm:flex p-3 text-slate-400 hover:text-indigo-600 bg-white rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-lg"><Settings size={22} /></button>
@@ -673,10 +683,10 @@ export default function App() {
 
       {/* Transaction Entry Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-[100] p-6 animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-[100] p-6">
           <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden animate-slideUp">
             <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Record Asset</h3>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">Record Position</h3>
               <button onClick={() => setShowAddModal(false)} className="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-slate-100 text-slate-300 hover:text-slate-900 transition-all">✕</button>
             </div>
             <form onSubmit={handleAddAsset} className="p-8 space-y-6">
@@ -705,7 +715,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1">Record Date</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1">Date</label>
                 <input 
                   type="date" required
                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 font-bold"
@@ -723,12 +733,8 @@ export default function App() {
 
       {/* Inline Animation Styles */}
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
         .animate-slideUp { animation: slideUp 0.5s ease-out; }
-        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
